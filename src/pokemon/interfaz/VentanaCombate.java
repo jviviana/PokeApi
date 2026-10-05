@@ -7,9 +7,10 @@ import pokemon.modelo.Pokemon;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 
 /**
- * VENTANA PRINCIPAL: une los dos paneles de jugador, el boton Fight! y el log.
+ * VENTANA PRINCIPAL: une los dos paneles de jugador, el boton ¡PELEAR! y el log.
  *
  * "extends JFrame"            -> esta clase ES una ventana.
  * "implements BattleListener" -> esta clase CUMPLE el contrato de BattleListener,
@@ -23,9 +24,9 @@ public class VentanaCombate extends JFrame implements BattleListener
 {
     private final PanelPokemon panel1;
     private final PanelPokemon panel2;
-    private final JButton botonPelear = new JButton("Fight!");
+    private final JButton botonPelear = new JButton("¡PELEAR!");
     private final JLabel etiquetaResultado = new JLabel(" ", SwingConstants.CENTER);
-    private final JTextArea areaLog = new JTextArea(12, 50); //12 filas, 50 columnas
+    private final JTextArea areaLog = new JTextArea(7, 60); //7 filas, 60 columnas
 
     private Battle combateActual;
     private boolean hayCombate = false;
@@ -40,10 +41,14 @@ public class VentanaCombate extends JFrame implements BattleListener
         // "this::actualizarBotonPelear" es una REFERENCIA A METODO: otra forma corta de lambda.
         // Equivale a "() -> actualizarBotonPelear()". Le pasamos al panel el metodo que
         // debe llamar cuando su Pokemon cambie (ese es el Runnable que recibe el panel).
-        panel1 = new PanelPokemon("Jugador 1", clienteApi, this::actualizarBotonPelear);
-        panel2 = new PanelPokemon("Jugador 2", clienteApi, this::actualizarBotonPelear);
+        // new Color(rojo, verde, azul) con valores de 0 a 255.
+        // Paleta de la app: azul clarito (Jugador 1), rojo clarito (Jugador 2) y azul oscuro
+        // para lo demas (boton y textos). Son colores suaves que combinan entre si.
+        panel1 = new PanelPokemon("Jugador 1", new Color(219, 234, 254), clienteApi, this::actualizarBotonPelear);
+        panel2 = new PanelPokemon("Jugador 2", new Color(254, 226, 226), clienteApi, this::actualizarBotonPelear);
 
         armarDisenio();
+        descargarNombres(clienteApi);
 
         botonPelear.addActionListener(e -> iniciarCombate());
         actualizarBotonPelear(); //empieza deshabilitado porque no hay Pokemon cargados
@@ -53,10 +58,48 @@ public class VentanaCombate extends JFrame implements BattleListener
         setLocationRelativeTo(null);  //null = centrar la ventana en la pantalla
     }
 
+    /**
+     * Descarga la lista de nombres de todos los Pokemon para las sugerencias del buscador.
+     * Se hace con un SwingWorker (igual que al cargar un Pokemon) para no congelar la ventana.
+     * Si falla (por ejemplo, sin internet) simplemente no habra sugerencias; el resto sigue igual.
+     */
+    private void descargarNombres(PokeApiClient clienteApi)
+    {
+        new SwingWorker<List<String>, Void>()
+        {
+            @Override
+            protected List<String> doInBackground() throws Exception
+            {
+                return clienteApi.obtenerNombres(); //hilo en segundo plano: aqui va lo lento
+            }
+
+            @Override
+            protected void done()
+            {
+                try
+                {
+                    // hilo de Swing: le damos la misma lista a los dos paneles
+                    List<String> nombres = get();
+                    panel1.setNombresDisponibles(nombres);
+                    panel2.setNombresDisponibles(nombres);
+                }
+                catch (Exception e)
+                {
+                    //sin sugerencias, pero la app funciona igual
+                }
+            }
+        }.execute();
+    }
+
     private void armarDisenio()
     {
+        // boton azul oscuro con letras blancas para que resalte
         botonPelear.setFont(botonPelear.getFont().deriveFont(Font.BOLD, 22f));
-        etiquetaResultado.setFont(etiquetaResultado.getFont().deriveFont(Font.BOLD, 16f));
+        botonPelear.setBackground(new Color(30, 58, 138));
+        botonPelear.setForeground(Color.WHITE);
+        botonPelear.setPreferredSize(new Dimension(180, 60));
+        etiquetaResultado.setFont(etiquetaResultado.getFont().deriveFont(Font.BOLD, 17f));
+        etiquetaResultado.setForeground(new Color(30, 58, 138)); //mismo azul oscuro del boton
 
         // BorderLayout divide el espacio en 5 zonas: NORTH (arriba), SOUTH (abajo),
         // WEST (izquierda), EAST (derecha) y CENTER (centro).
@@ -66,9 +109,17 @@ public class VentanaCombate extends JFrame implements BattleListener
         contenidoCentro.add(botonPelear, BorderLayout.CENTER);
         contenidoCentro.add(etiquetaResultado, BorderLayout.SOUTH);
         centro.add(contenidoCentro);
+        // Paneles transparentes: asi se ve el color de fondo de la ventana
+        centro.setOpaque(false);
+        contenidoCentro.setOpaque(false);
+        // Le damos un ancho fijo de 260 px a la columna del centro. Sin esto, el ancho se calcula
+        // cuando todavia no hay texto, y despues "Ganador: Squirtle" no cabe y se ve cortado.
+        // El alto en 0 significa "no importa": la altura la manda lo mas alto (los paneles de jugador).
+        centro.setPreferredSize(new Dimension(260, 0));
 
         //jugador 1 a la izquierda, boton al centro, jugador 2 a la derecha
         JPanel arriba = new JPanel(new BorderLayout(10, 0));
+        arriba.setOpaque(false); //transparente para que se vea el fondo crema
         arriba.add(panel1, BorderLayout.WEST);
         arriba.add(centro, BorderLayout.CENTER);
         arriba.add(panel2, BorderLayout.EAST);
@@ -76,18 +127,21 @@ public class VentanaCombate extends JFrame implements BattleListener
         // LOG DE BATALLA (lo pide el taller): JTextArea dentro de un JScrollPane.
         // JScrollPane le agrega barras de desplazamiento cuando el texto no cabe.
         areaLog.setEditable(false); //el usuario no puede escribir en el log
-        areaLog.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
+        areaLog.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 14));
+        areaLog.setBackground(Color.WHITE);              //fondo blanco
+        areaLog.setForeground(new Color(30, 41, 59));    //letras gris azulado oscuro
         JScrollPane scrollLog = new JScrollPane(areaLog);
         scrollLog.setBorder(BorderFactory.createTitledBorder("Log de batalla"));
 
         JPanel raiz = new JPanel(new BorderLayout(10, 10));
+        raiz.setBackground(new Color(241, 245, 249)); //gris azulado muy claro, fondo de la ventana
         raiz.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); //margen de 10 px
         raiz.add(arriba, BorderLayout.CENTER);
         raiz.add(scrollLog, BorderLayout.SOUTH);
         setContentPane(raiz); //este panel es el contenido de la ventana
     }
 
-    //Fight! solo se habilita si los dos Pokemon estan cargados y no hay un combate en curso
+    //¡PELEAR! solo se habilita si los dos Pokemon estan cargados y no hay un combate en curso
     private void actualizarBotonPelear()
     {
         boolean ambosCargados = panel1.getPokemon() != null && panel2.getPokemon() != null;
@@ -173,6 +227,12 @@ public class VentanaCombate extends JFrame implements BattleListener
     {
         SwingUtilities.invokeLater(() ->
         {
+            // ANIMACION: el que ataca se lanza hacia el rival.
+            // Si el atacante es el Jugador 1 (izquierda) se mueve a la derecha; si es el 2, a la izquierda.
+            boolean ataca1 = attacker.equals(combateActual.getNombre1());
+            PanelPokemon panelAtacante = ataca1 ? panel1 : panel2;
+            panelAtacante.animarAtaque(ataca1);
+
             // StringBuilder sirve para armar un texto por partes con append(...);
             // al final toString() lo convierte en un String normal.
             StringBuilder linea = new StringBuilder();
@@ -195,10 +255,10 @@ public class VentanaCombate extends JFrame implements BattleListener
             panel.actualizarVida(hpActual);
 
             Pokemon p = panel.getPokemon();
-            //no escribimos en el log el HP lleno del inicio, solo cuando baja
+            //no escribimos en el log la vida llena del inicio, solo cuando baja
             if (p != null && hpActual < p.getHpMaximo())
             {
-                escribirEnLog("   HP de " + pokemon + ": " + hpActual + " / " + p.getHpMaximo());
+                escribirEnLog("   Vida de " + pokemon + ": " + hpActual + " / " + p.getHpMaximo());
             }
         });
     }

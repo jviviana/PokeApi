@@ -95,7 +95,7 @@ public class PokeApiClient
         return convertirJsonAPokemon(respuesta.body());
     }
 
-    //busca un Pokemon con un numero aleatorio (para el boton Random)
+    //busca un Pokemon con un numero aleatorio (para el boton Aleatorio)
     public Pokemon buscarPokemonAleatorio() throws IOException, InterruptedException
     {
         // nextInt(1025) da un numero entre 0 y 1024; le sumamos 1 -> entre 1 y 1025
@@ -103,6 +103,37 @@ public class PokeApiClient
 
         // la API acepta el numero como texto: .../pokemon/25 es Pikachu
         return buscarPokemon(String.valueOf(idAleatorio));
+    }
+
+    /**
+     * Trae la lista con los NOMBRES de todos los Pokemon (para las sugerencias del buscador).
+     *
+     * Es el mismo endpoint de siempre pero sin nombre al final y con ?limit=2000
+     * ("dame hasta 2000"). El JSON viene asi:
+     * { "count": 1350, "results": [ { "name": "bulbasaur", "url": "..." }, ... ] }
+     * Solo nos interesa el "name" de cada elemento de "results".
+     */
+    public List<String> obtenerNombres() throws IOException, InterruptedException
+    {
+        HttpRequest peticion = HttpRequest.newBuilder()
+                .uri(URI.create(URL_BASE + "?limit=2000"))
+                .timeout(Duration.ofSeconds(15))
+                .GET()
+                .build();
+
+        HttpResponse<String> respuesta = cliente.send(peticion, HttpResponse.BodyHandlers.ofString());
+        if (respuesta.statusCode() != 200)
+        {
+            throw new IOException("PokeAPI respondió con código " + respuesta.statusCode());
+        }
+
+        List<String> nombres = new ArrayList<>();
+        JSONArray resultados = new JSONObject(respuesta.body()).getJSONArray("results");
+        for (int i = 0; i < resultados.length(); i++)
+        {
+            nombres.add(resultados.getJSONObject(i).getString("name"));
+        }
+        return nombres;
     }
 
     /**
