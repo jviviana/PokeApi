@@ -12,12 +12,22 @@ import java.util.Random;
  * a traves de un BattleListener (ver esa interface).
  *
  * Formula de daño elegida (el taller pide documentarla):
- *   base  = ATAQUE * aleatorio(0.5 a 1.0) - DEFENSA * aleatorio(0 a 0.5)
- *   base  = minimo 1 (para que siempre haya daño y el combate termine)
- *   daño  = base * efectividad * (1.5 si es critico)
+ *   daño = 10 * (ATAQUE del atacante / DEFENSA del defensor)
+ *             * aleatorio(0.85 a 1.0) * efectividad * (1.5 si es critico)
+ *   daño = minimo 1 (para que siempre haya daño y el combate termine)
  *
- * ¿Por que no la del ejemplo (ATK*random - DEF*random)? Porque muchas veces
- * da negativa, y un Pokemon con mucha defensa nunca recibiria daño.
+ * ¿Por que esta formula?
+ *   - ATAQUE / DEFENSA: si el ataque es el doble de la defensa, el golpe hace el doble;
+ *     si la defensa es el doble del ataque, hace la mitad. Asi la defensa SI protege.
+ *   - El 10 (POTENCIA) hace que un golpe normal quite mas o menos 1/4 o 1/5 de la vida,
+ *     y la pelea dure varios turnos (como la vida de los Pokemon esta entre 40 y 100 casi siempre).
+ *   - El azar es pequeño (85% a 100%, igual que en los juegos de Pokemon): un golpe puede
+ *     variar un poco, pero las estadisticas deciden quien gana, no la suerte.
+ *
+ * ¿Por que NO la del ejemplo (ATK*random - DEF*random)? La probamos: con Charmander vs Squirtle
+ * un golpe de Squirtle podia quitar de 3 a 62 de vida (Charmander tiene 39), asi que a veces
+ * mataba de un golpe y a veces necesitaba 3, y Charmander ganaba 1 de cada 6 peleas aunque
+ * todas sus estadisticas y su tipo estan en desventaja. Era casi pura suerte.
  */
 public class Battle
 {
@@ -26,6 +36,11 @@ public class Battle
     private static final double MULTIPLICADOR_CRITICO = 1.5;
     private static final double SUPER_EFECTIVO = 1.3;
     private static final double POCO_EFECTIVO = 0.7;
+
+    //numero que multiplica la formula para que cada golpe quite una parte razonable de la vida
+    private static final double POTENCIA = 10;
+    //el azar del daño va del 85% al 100% del golpe
+    private static final double AZAR_MINIMO = 0.85;
 
     //pausa entre turnos (en milisegundos) para que el usuario alcance a ver la pelea
     private static final long PAUSA_ENTRE_TURNOS_MS = 700;
@@ -110,12 +125,17 @@ public class Battle
     //un ataque: calcula el daño, se lo aplica al defensor y avisa al escuchador
     private void ejecutarTurno(Pokemon atacante, Pokemon defensor)
     {
-        // nextDouble() devuelve un decimal al azar entre 0.0 y 1.0
-        //   0.5 + nextDouble() * 0.5  -> entre 0.5 y 1.0
-        //   nextDouble() * 0.5        -> entre 0.0 y 0.5
-        double base = atacante.getAtaque() * (0.5 + aleatorio.nextDouble() * 0.5)
-                - defensor.getDefensa() * (aleatorio.nextDouble() * 0.5);
-        base = Math.max(1, base); //nunca menos de 1
+        // 1) Proporcion ataque / defensa.
+        //    "(double)" convierte a decimal: si no, 48 / 65 en enteros daria 0 en vez de 0.738
+        double proporcion = (double) atacante.getAtaque() / defensor.getDefensa();
+
+        // 2) Azar pequeño. nextDouble() devuelve un decimal al azar entre 0.0 y 1.0, entonces:
+        //    0.85 + nextDouble() * 0.15  -> un numero entre 0.85 y 1.0
+        double azar = AZAR_MINIMO + aleatorio.nextDouble() * (1 - AZAR_MINIMO);
+
+        // 3) Golpe base. Ejemplo: Squirtle (ATK 48) contra Charmander (DEF 43):
+        //    10 * (48 / 43) = 11.2  ->  con el azar queda entre 9.5 y 11.2
+        double base = POTENCIA * proporcion * azar;
 
         //10% de probabilidad: el numero al azar (0 a 1) es menor que 0.10 una de cada 10 veces
         boolean esCritico = aleatorio.nextDouble() < PROBABILIDAD_CRITICO;

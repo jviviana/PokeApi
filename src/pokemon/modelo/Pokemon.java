@@ -23,7 +23,7 @@ public class Pokemon
     private final int velocidad;
     private final String urlImagen;
 
-    // el HP actual es lo UNICO que cambia durante el combate, por eso NO es final
+    // la vida actual (hpActual) es lo UNICO que cambia durante el combate, por eso NO es final
     private int hpActual;
 
     //constructor: se ejecuta al hacer "new Pokemon(...)"
@@ -41,7 +41,7 @@ public class Pokemon
         this.hpActual = hpMaximo; //empieza con la vida llena
     }
 
-    //le resta el daño al HP
+    //le resta el daño a la vida
     public void recibirDanio(int danio)
     {
         // Math.max(a, b) devuelve el mayor de los dos numeros.
