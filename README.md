@@ -68,6 +68,22 @@ de 3 a 62 de vida, y el resultado era casi pura suerte.
   al revés = x0.7; el resto = x1.0.
 - Ataca primero el de mayor velocidad; si empatan, se sortea. El HP nunca baja de 0.
 
+## Uso de inteligencia artificial
+
+La primera versión del proyecto (el código base de `api/`, `combate/`, `interfaz/` y `modelo/`) se generó
+con ayuda de **Claude** (asistente de IA de Anthropic). Por eso los dos primeros commits dicen
+`Co-Authored-By: Claude`.
+
+A partir de esa base, el equipo hizo lo siguiente:
+
+- Pasamos el proyecto de Gradle a un proyecto normal de IntelliJ (`src/` + `lib/`) y agregamos org.json.
+- Refactorizamos `PanelPokemon`, `VentanaCombate`, `Battle` y `PokeApiClient`, y agregamos las
+  sugerencias mientras se escribe y la animación de ataque (PR #1).
+- Revisamos y ajustamos la fórmula de daño y escribimos su justificación en este README.
+- Tomamos las capturas de pantalla y simplificamos los comentarios del código.
+
+Revisamos todo el código y podemos explicar cómo funciona cada parte.
+
 ## Capturas de pantalla
 
 **1. Sugerencias mientras se escribe** (al escribir «pik» aparece una lista corta)
