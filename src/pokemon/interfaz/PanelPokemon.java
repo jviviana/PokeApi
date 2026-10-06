@@ -18,16 +18,14 @@ import java.util.concurrent.ExecutionException;
 /**
  * Panel de UN jugador: campo de texto, botones Cargar/Aleatorio, imagen,
  * datos y barra de vida. La ventana crea DOS de estos (uno por jugador).
- *
- * "extends JPanel" = HERENCIA: esta clase ES un JPanel (un panel de Swing),
- * con todo lo que tiene un JPanel, mas lo que nosotros le agregamos.
+
  */
 public class PanelPokemon extends JPanel
 {
     private static final int TAMANIO_IMAGEN = 140;
 
     // Ancho de la etiqueta de la imagen. Es ancha a proposito: la imagen del Pokemon queda
-    // en el centro y le sobra espacio a los lados para poder "lanzarse" hacia el rival.
+
     private static final int ANCHO_ZONA_IMAGEN = 340;
     private static final int ALTO_ZONA_IMAGEN = 150;
 
@@ -44,7 +42,7 @@ public class PanelPokemon extends JPanel
 
     // Runnable = un "pedacito de codigo" guardado en una variable para ejecutarlo despues
     // con .run(). La ventana nos lo pasa para enterarse cada vez que cambia el Pokemon
-    // (asi sabe si debe habilitar el boton ¡PELEAR!).
+
     private final Runnable alCambiarPokemon;
 
     private final JTextField campoNombre = new JTextField(12);
@@ -274,14 +272,7 @@ public class PanelPokemon extends JPanel
     }
 
     /**
-     * Carga un Pokemon desde la API SIN CONGELAR LA VENTANA.
-     *
-     * EL PROBLEMA: Swing tiene un solo hilo (el EDT) que dibuja la ventana y atiende
-     * los clics. Si hacemos la peticion a internet en ese hilo (como en clase), la
-     * ventana se queda "pegada" hasta que llegue la respuesta: no se puede mover,
-     * no responde a clics, no se redibuja. El taller lo prohibe.
-     *
-     * LA SOLUCION: SwingWorker. Es una clase de Swing que divide el trabajo en dos partes:
+     SwingWorker. Es una clase de Swing que divide el trabajo en dos partes:
      *   1. doInBackground() -> se ejecuta en OTRO hilo (en segundo plano).
      *                          Aqui va lo que tarda: la peticion a internet.
      *                          Aqui NO se debe tocar ningun boton ni etiqueta.
@@ -297,19 +288,13 @@ public class PanelPokemon extends JPanel
         pokemon = null;
         alCambiarPokemon.run(); //avisamos a la ventana: mientras carga, ¡PELEAR! se deshabilita
 
-        // SwingWorker<Pokemon, Void>:
-        //   Pokemon -> el tipo de dato que devuelve doInBackground() (el resultado)
-        //   Void    -> no usamos resultados parciales, por eso "Void" (nada)
-        //
-        // "new SwingWorker<...>() { ... }" es una CLASE ANONIMA: creamos un objeto
-        // de una clase hija de SwingWorker sin darle nombre, escribiendo sus metodos
-        // ahi mismo. (Es lo que hace IntelliJ con "new ActionListener() { ... }".)
+
         new SwingWorker<Pokemon, Void>()
         {
             private BufferedImage imagen;
 
             // @Override = "estoy reescribiendo un metodo que ya existe en la clase padre".
-            // Si escribimos mal el nombre, Java nos avisa con un error.
+
             @Override
             protected Pokemon doInBackground() throws Exception
             {

@@ -11,14 +11,7 @@ import java.util.List;
 
 /**
  * VENTANA PRINCIPAL: une los dos paneles de jugador, el boton ¡PELEAR! y el log.
- *
- * "extends JFrame"            -> esta clase ES una ventana.
- * "implements BattleListener" -> esta clase CUMPLE el contrato de BattleListener,
- *                                o sea, sabe "escuchar" el combate. Por eso abajo
- *                                estan escritos los metodos onTurn, onHpChanged, etc.
- *
- * El taller pide que la pantalla se actualice SOLO a partir de esos eventos:
- * Battle avisa -> esta ventana dibuja.
+
  */
 public class VentanaCombate extends JFrame implements BattleListener
 {
@@ -39,11 +32,7 @@ public class VentanaCombate extends JFrame implements BattleListener
         PokeApiClient clienteApi = new PokeApiClient();
 
         // "this::actualizarBotonPelear" es una REFERENCIA A METODO: otra forma corta de lambda.
-        // Equivale a "() -> actualizarBotonPelear()". Le pasamos al panel el metodo que
-        // debe llamar cuando su Pokemon cambie (ese es el Runnable que recibe el panel).
-        // new Color(rojo, verde, azul) con valores de 0 a 255.
-        // Paleta de la app: azul clarito (Jugador 1), rojo clarito (Jugador 2) y azul oscuro
-        // para lo demas (boton y textos). Son colores suaves que combinan entre si.
+
         panel1 = new PanelPokemon("Jugador 1", new Color(219, 234, 254), clienteApi, this::actualizarBotonPelear);
         panel2 = new PanelPokemon("Jugador 2", new Color(254, 226, 226), clienteApi, this::actualizarBotonPelear);
 

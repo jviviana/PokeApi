@@ -9,9 +9,6 @@ import java.io.IOException;
  *   - PokemonNoEncontradoException -> el Pokemon no existe (la API respondio 404)
  *   - IOException normal           -> fallo el internet
  * Asi la ventana puede mostrar un mensaje distinto para cada caso.
- *
- * "extends IOException" = HERENCIA: esta clase ES UN tipo de IOException,
- * asi que hereda todo lo que tiene IOException (como getMessage()).
  */
 public class PokemonNoEncontradoException extends IOException
 {

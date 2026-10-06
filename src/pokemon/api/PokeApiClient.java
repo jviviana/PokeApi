@@ -21,26 +21,18 @@ import java.util.Random;
  * CLIENTE DE LA API: se encarga SOLO de hablar con PokeAPI.
  * Hace la peticion HTTP (igual que en clase) y convierte el JSON en un objeto Pokemon.
  *
- * (El nombre "PokeApiClient" lo exige el taller; significa "cliente de PokeAPI".)
- *
+
  * IMPORTANTE: estos metodos tardan porque van a internet, por eso
  * NUNCA se deben llamar desde el hilo de la ventana (ver PanelPokemon).
  */
 public class PokeApiClient
 {
-    // "private static final" = CONSTANTE:
-    //   static -> pertenece a la clase, no a cada objeto (hay una sola copia)
-    //   final  -> no se puede cambiar
-    // Por convencion las constantes se escriben EN_MAYUSCULAS.
+
     private static final String URL_BASE = "https://pokeapi.co/api/v2/pokemon/";
 
     //PokeAPI tiene Pokemon con id del 1 al 1025
     private static final int ID_MAXIMO = 1025;
 
-    // En clase usamos HttpClient.newHttpClient(). Aqui usamos newBuilder() para
-    // poder configurarle un tiempo maximo de conexion (connectTimeout):
-    // si en 10 segundos no conecta, lanza un error en vez de quedarse esperando para siempre.
-    // Duration.ofSeconds(10) = "una duracion de 10 segundos".
     private final HttpClient cliente = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
@@ -58,14 +50,9 @@ public class PokeApiClient
      */
     public Pokemon buscarPokemon(String nombreOId) throws IOException, InterruptedException
     {
-        // trim() quita espacios al inicio y al final; toLowerCase() pasa a minusculas.
-        // La API solo acepta nombres en minuscula ("Pikachu" fallaria, "pikachu" no).
         String busqueda = nombreOId.trim().toLowerCase();
 
-        // matches(...) revisa si el texto cumple un patron (expresion regular).
-        // "[a-z0-9-]+" = solo letras minusculas, numeros o guiones, al menos uno.
-        // Si escriben "mr mime" (con espacio), URI.create fallaria con un error raro,
-        // asi que mejor avisamos de una vez que no existe.
+
         if (!busqueda.matches("[a-z0-9-]+"))
         {
             // "throw" LANZA un error: el metodo se detiene aqui y el error
@@ -109,9 +96,7 @@ public class PokeApiClient
      * Trae la lista con los NOMBRES de todos los Pokemon (para las sugerencias del buscador).
      *
      * Es el mismo endpoint de siempre pero sin nombre al final y con ?limit=2000
-     * ("dame hasta 2000"). El JSON viene asi:
-     * { "count": 1350, "results": [ { "name": "bulbasaur", "url": "..." }, ... ] }
-     * Solo nos interesa el "name" de cada elemento de "results".
+
      */
     public List<String> obtenerNombres() throws IOException, InterruptedException
     {
@@ -168,11 +153,6 @@ public class PokeApiClient
         return ImageIO.read(new ByteArrayInputStream(respuesta.body()));
     }
 
-    /**
-     * Convierte el texto JSON que responde la API en un objeto Pokemon.
-     * Es lo mismo que haciamos en clase, pero en vez de imprimir con
-     * System.out.println, guardamos los valores en variables.
-     */
     private Pokemon convertirJsonAPokemon(String textoJson)
     {
         JSONObject json = new JSONObject(textoJson);
@@ -180,9 +160,7 @@ public class PokeApiClient
         int id = json.getInt("id");
         String nombre = json.getString("name");
 
-        // En el JSON los tipos vienen asi:
-        // "types": [ { "slot": 1, "type": { "name": "fire" } }, ... ]
-        // getJSONArray -> el arreglo; getJSONObject(i) -> el elemento i (como en clase con el cast)
+
         List<String> tipos = new ArrayList<>();
         JSONArray arregloTipos = json.getJSONArray("types");
         for (int i = 0; i < arregloTipos.length(); i++)
@@ -191,8 +169,7 @@ public class PokeApiClient
             tipos.add(elemento.getJSONObject("type").getString("name"));
         }
 
-        // Las estadisticas vienen asi:
-        // "stats": [ { "base_stat": 45, "stat": { "name": "hp" } }, ... ]
+        // Las estadisticas
         // Recorremos todas y guardamos solo las 4 que necesitamos.
         int hp = 0, ataque = 0, defensa = 0, velocidad = 0;
         JSONArray arregloStats = json.getJSONArray("stats");
@@ -202,9 +179,6 @@ public class PokeApiClient
             String nombreStat = stat.getJSONObject("stat").getString("name");
             int valor = stat.getInt("base_stat");
 
-            // switch = un if/else if/else mas ordenado cuando se compara
-            // una misma variable con varios valores.
-            // "break" sale del switch (si no se pone, sigue al siguiente case).
             switch (nombreStat)
             {
                 case "hp": hp = valor; break;
@@ -215,10 +189,9 @@ public class PokeApiClient
             }
         }
 
-        // En clase usamos imageJson.getString("front_default").
         // Problema: algunos Pokemon tienen la imagen en null y getString lanza error.
         // optString("front_default", null) significa: "dame el texto, y si no hay, dame null"
-        // (opt = opcional). Asi no se rompe el programa.
+
         String urlImagen = json.getJSONObject("sprites").optString("front_default", null);
 
         return new Pokemon(id, nombre, tipos, hp, ataque, defensa, velocidad, urlImagen);
